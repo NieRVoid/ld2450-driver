@@ -75,25 +75,21 @@ typedef struct {
 } ld2450_region_t;
 
 /**
- * @brief Target information structure
+ * @brief Target information structure (5 bytes per target)
  */
 typedef struct {
     int16_t x;                /*!< X coordinate (mm) */
     int16_t y;                /*!< Y coordinate (mm) */
-    int16_t speed;            /*!< Speed (cm/s) */
-    uint16_t resolution;      /*!< Distance resolution (mm) */
-    float distance;           /*!< Calculated distance (mm) */
-    float angle;              /*!< Calculated angle in degrees */
-    bool valid;               /*!< Target validity flag */
-} ld2450_target_t;
+    int8_t speed;             /*!< Speed compressed to int8_t (relative scale, cm/s) */
+} __attribute__((packed)) ld2450_target_t;
 
 /**
- * @brief Data frame structure containing target information
+ * @brief Data frame structure containing target information (16 bytes total)
  */
 typedef struct {
-    ld2450_target_t targets[3];  /*!< Data for up to 3 targets */
-    uint8_t count;               /*!< Number of valid targets (0-3) */
-} ld2450_frame_t;
+    ld2450_target_t targets[3]; /*!< Data for up to 3 targets (15 bytes) */
+    uint8_t valid_mask;        /*!< Bit mask of valid targets (1 bit per target) */
+} __attribute__((packed)) ld2450_frame_t;
 
 /**
  * @brief Driver configuration structure
