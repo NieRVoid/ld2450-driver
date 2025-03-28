@@ -6,7 +6,7 @@
  * extracting target information and calculating derived metrics.
  * 
  * @author NieRVoid
- * @date 2025-03-12
+ * @date 2025-03-15
  * @license MIT
  */
 
@@ -14,6 +14,7 @@
 #include <math.h>
 #include "ld2450.h"
 #include "ld2450_private.h"
+#include "ld2450_circular_buffer.h"
 #include "esp_log.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -126,7 +127,7 @@ esp_err_t ld2450_parse_frame(const uint8_t *data, size_t len, ld2450_frame_t *fr
  * @brief Handle a complete data frame
  * 
  * This function processes a complete data frame, parses it, and delivers
- * the results to the registered callback if any.
+ * the results to the circular buffer for consumers.
  * 
  * @param data Frame data
  * @param len Frame length
@@ -155,16 +156,8 @@ esp_err_t ld2450_handle_data_frame(const uint8_t *data, size_t len)
         return ret;
     }
     
-    // Call the callback if registered - minimize mutex protected region
-    if (instance->target_callback != NULL) {
-        // Create a local copy of the frame before calling callback
-        ld2450_frame_t frame_copy = frame;
-        
-        // Call callback outside of any mutex lock
-        instance->target_callback(&frame_copy, instance->user_ctx);
-    }
-    
-    return ESP_OK;
+    // Write frame to circular buffer for multi-consumer access
+    return ld2450_circular_buffer_write(&instance->circular_buffer, &frame);
 }
 
 /**
